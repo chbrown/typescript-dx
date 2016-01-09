@@ -1,0 +1,89 @@
+#!/usr/bin/env node
+var streaming = require('streaming');
+
+/**
+Read a single JSON object from the given stream.
+*/
+function readStream(stream, callback) {
+  streaming.readToEnd(stream, function(error, chunks) {
+    if (error) return callback(error);
+    var data = chunks.join('');
+    var object;
+    try {
+      object = JSON.parse(data);
+    }
+    catch (syntaxError) {
+      return callback(syntaxError);
+    }
+    callback(null, object);
+  });
+}
+
+function main() {
+  var argvparser = require('optimist')
+    .usage('Usage: json-schema-to-interface <customer.schema.json')
+    .describe({
+      help: 'print this help message',
+      version: 'print version',
+    })
+    .alias({help: 'h'})
+    .boolean(['help', 'version']);
+  var argv = argvparser.argv;
+
+  if (argv.help) {
+    argvparser.showHelp();
+  }
+  else if (argv.version) {
+    console.log(require('../package').version);
+  }
+  else {
+    readStream(process.stdin, function(error, schema) {
+      if (error) {
+        console.error(error.toString());
+        process.exit(1);
+      }
+
+      var interfaceString = 'type ? = ' + createType(schema.type, schema);
+      console.log(interfaceString);
+      process.exit(0);
+    });
+  }
+}
+
+function createType(schemaType, schema) {
+  if (Array.isArray(schemaType)) {
+    // maximally one level of recursion; schema.type is string | string[]
+    return schemaType.map(function(schemaType) {
+      return createType(schemaType, schema);
+    }).join(' | ');
+  }
+  else if (schemaType === 'object') {
+    return createObjectType(schema);
+  }
+  else if (schemaType === 'array') {
+    return createArrayType(schema);
+  }
+  else {
+    return schemaType;
+  }
+}
+
+/**
+Convert a JSON schema to a TypeScript interface
+*/
+function createObjectType(schema) {
+  var lines = Object.keys(schema.properties).map(function(key) {
+    var property = schema.properties[key];
+    var value = createType(property.type, property);
+    return '  ' + key + ': ' + value + ';';
+  });
+  return '{\n' + lines.join('\n') + '\n}';
+}
+
+function createArrayType(schema) {
+  return createType(schema.items.type, schema.items) + '[]';
+}
+
+if (require.main === module) {
+  main();
+}

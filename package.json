@@ -1,0 +1,24 @@
+{
+  "name": "typescript-dx",
+  "version": "0.0.0",
+  "description": "TypeScript development tools",
+  "keywords": [
+    "typescript",
+    "dx",
+    "devtools"
+  ],
+  "homepage": "https://github.com/chbrown/typescript-dx",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chbrown/typescript-dx.git"
+  },
+  "license": "MIT",
+  "author": "Christopher Brown <io@henrian.com>",
+  "dependencies": {
+    "optimist": "*",
+    "streaming": "*"
+  },
+  "bin": {
+    "json-schema-to-interface": "bin/json-schema-to-interface"
+  }
+}
